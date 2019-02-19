@@ -1,0 +1,91 @@
+# Python 2.7
+# danlwo.tem96@g2.nctu.edu.tw
+# Fusion multiple csv files with designated fields,
+# and consolidate by one unique index from each original file.
+
+
+import csv
+import sys
+
+
+# ---Set csv file list & index here!---
+def csv_file_list():
+    return [
+        './path/to/csvfile1.csv',
+        './path/to/csvfile2.csv',
+        './path/to/csvfile3.csv'
+        # There's no limit for file number
+        ]
+
+def field_to_keep():
+    return [
+        # First element should be index field!
+        ['item-ID', 'something', 'somethingelse'],
+        ['item-ID', 'somethingmore', 'somethingfun', 'somethingfoo', 'somethingboo'],
+        ['item-ID', 'somethingcool', 'somethingnice']
+        ]
+# ---End of settings.---
+
+
+def csv_to_list_of_dict(csv_file):
+    with open(csv_file) as file:
+        list_of_dict = [
+            {k: v for k, v in row.items()}
+            for row in csv.DictReader(file, skipinitialspace=True)
+        ]
+    return list_of_dict
+
+
+def list_of_dict_to_csv(list_of_dict, csv_filename):
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    keys = flatten(field_to_keep())
+    with open(csv_filename, 'wb') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(list_of_dict)
+
+
+def field_trimmer(list_of_dict_to_be_trimmed, list_of_fields_to_keep):
+    for item in list_of_dict_to_be_trimmed:
+        for key in item.keys():
+            if key not in list_of_fields_to_keep:
+                del item[key]
+    return list_of_dict_to_be_trimmed
+
+
+def dict_fusion(itemname):
+    fusion_list = []
+    for i, list_of_dict in enumerate(yard):
+        for item in list_of_dict:
+            if item[field_to_keep()[i][0]] == itemname:
+                fusion_list.append(item)
+            else:
+                pass
+    return fusion_list
+
+
+def merge_dicts(list_of_dict):
+    merged_dict = {}
+    for part in list_of_dict:
+        merged_dict.update(part)
+    return merged_dict
+
+
+def main():
+    index_list = []
+    global yard
+    yard = map(csv_to_list_of_dict, csv_file_list())
+    for i, list_of_dict in enumerate(yard):
+        list_of_dict = field_trimmer(list_of_dict, field_to_keep()[i])
+        for item in list_of_dict:
+            index_list.append(item[field_to_keep()[i][0]])
+    index_set = set(index_list)
+    fusioned_list = map(dict_fusion, index_set)
+    fusion_result = map(merge_dicts, fusioned_list)
+    print fusion_result
+    list_of_dict_to_csv(fusion_result, 'fusion_result.csv')
+
+
+if __name__ == '__main__':
+    main()
+
